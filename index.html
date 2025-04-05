@@ -1,395 +1,368 @@
-<!DOCTYPE html>
-<html lang="en">
+from xml.dom.expatbuilder import theDOMImplementation
+import os
+import time
+import json
+import requests
+from typing import Optional
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopper.com</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://kit.fontawesome.com/e5fcab2af9.js" crossorigin="anonymous"></script>
-</head>
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 
-<body>
-    <div id="entire_page">
-        <div id="container">
-            <!--START OF HEADER-->
-            <div id="header_content">
-                <div class="first_h">
-                    <p>⚡️ HOLIDAY DEALS ON EVERYTHING ⚡️</p>
-                </div>
-                <div class="second_h">
-                    <nav class="nav_f">
-                        <a href="" class="link">Home</a>
-                        <a href="" class="link">Catalog</a>
-                        <a href="" class="link">Shop</a>
-                        <a href="" class="link">Page</a>
-                        <a href="" class="link">Blog</a>
-                        <!-- <a href="" class="link">Docs</a> -->
-                    </nav>
-                    <div class="logo_area">
-                        <a href="" class="logo_link">
-                            <h2 class="logo">Gety Mart</h2>
-                        </a>
-                    </div>
-                    <div class="drawer_icon"><a href=""><span class="dot"><i class="fa-solid fa-bars"></i></span></a>
-                    </div>
-                    <nav class="nav_s">
-                        <ul>
-                            <li class="list">India</li>
-                            <li class="list">INR<i class="fa-solid fa-angle-down"></i></li>
-                            <li class="list">EN<i class="fa-solid fa-angle-down"></i></li>
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib import messages
+from django.db import IntegrityError
 
-                        </ul>
-                    </nav>
-                    <div class="icons">
-                        <ul>
-                            <li class="list"><i class="fa-solid fa-magnifying-glass"></i></li>
-                            <li class="list"><i class="fa-regular fa-user"></i></li>
-                            <li class="list"><i class="fa-regular fa-heart"></i></li>
-                            <li class="list"><i class="fa-solid fa-cart-shopping"></i></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <!--END OF HEADER-->
-            <!--START OF PAGE BANNER-->
-            <div id="page_banner">
-                <div id="banner">
-                    <div id="msg_box">
+import google.generativeai as genai
+from google.generativeai import configure
 
-                        <p class="summer_s">Summer Sales</p>
-                        <h1 id="seventy_p">50% OFF</h1>
-                        <p class="promo_c">with promo code CN67EW*</p>
+from .models import GithubToken
 
-                        <button id="shop_now" type="submit" name="shop now" onclick="change()">Shop now <i
-                                class="fa-solid fa-arrow-right"></i></button>
-                    </div>
-                </div>
-            </div>
-            <!--END OF PAGE BANNER-->
-            <!--START OF FIRST PRODUCTS GIRD-->
-            <div id="grid_f">
-                <div id="pro1" class="pro">
-                    <div id="msg">
-                        <h2 class="summer_pro">Addidas</h2>
-                        <span class="shop_n animate__slideOutRight">Shop Now <i
-                                class="fa-solid fa-arrow-right"></i></span>
+# ============================
+# 1. User Registration/Login Views
+# ============================
 
-                    </div>
-                </div>
-                <div id="pro2" class="pro">
-                    <div id="msg">
-                        <h2 class="summer_pro">Nike</h2>
-                        <span class="shop_n">Shop Now <i class="fa-solid fa-arrow-right"></i></span>
+def register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirmPassword')
+        email = request.POST.get('email')
 
-                    </div>
-                </div>
-                <div id="pro3" class="pro">
-                    <div id="msg">
-                        <h2 class="summer_pro">Nike customized</h2>
-                        <span class="shop_n">Shop Now <i class="fa-solid fa-arrow-right"></i></span>
+        if password != confirm_password:
+            messages.error(request, 'Passwords do not match. Please try again.')
+            return render(request, 'review/register.html')
 
-                    </div>
-                </div>
-            </div>
-            <!--END OF FIRST PRODUCTS GIRD-->
-            <!--START OF SECOND GIRD SECTION-->
-            <div id="grid_s">
-                <div class="heading">
-                    <h2 class="cathegory">Shop by Category</h2>
-                    <a href="" class="wom">Women</a>
-                    <a href="" class="wom">Men</a>
-                    <a href="" class="wom">Kids</a>
-                </div>
-                <div class="content">
-                    <a href="" class="post">
-                        <div id="first_post" class="sale">
-                            <img src="https://reginadanielsfashion.com/wp-content/uploads/2022/01/2d72b502-193c-493c-a660-432e7307a249-scaled.jpeg"
-                                class="pro_img">
-                            <p class="caption">Sweatshirts (11)</p>
-                        </div>
-                    </a>
-                    <a href="" class="post">
-                        <div id="first_post" class="sale">
-                            <img src="https://reginadanielsfashion.com/wp-content/uploads/2021/07/2F4A2900-scaled-500x633.jpg"
-                                class="pro_img">
-                            <p class="caption">Jackets (9)</p>
-                        </div>
-                    </a>
-                    <a href="" class="post">
-                        <div id="first_post" class="sale">
-                            <img src="https://reginadanielsfashion.com/wp-content/uploads/2021/07/2F4A3026-1-scaled-500x633.jpg"
-                                class="pro_img">
-                            <p class="caption">Dresses (27)</p>
-                        </div>
-                    </a>
-                    <a href="" class="post">
-                        <div id="first_post" class="sale">
-                            <img src="https://reginadanielsfashion.com/wp-content/uploads/2021/07/2F4A3402-scaled-500x633.jpg"
-                                class="pro_img">
-                            <p class="caption">Tops (58)</p>
-                        </div>
-                    </a>
-                    <a href="" class="post">
-                        <div id="first_post" class="sale">
-                            <img src="https://reginadanielsfashion.com/wp-content/uploads/2021/07/2F4A3758-scaled-500x633.jpg"
-                                class="pro_img">
-                            <p class="caption">T-shirts (35)</p>
-                        </div>
-                    </a>
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already taken. Please choose another one.')
+            return render(request, 'review/register.html')
 
-                </div>
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already registered. Please use a different email.')
+            return render(request, 'review/register.html')
 
-                <div id="big_post">
-                    <div class="box">
-                        <div id="one_bp1" class="one_bp">
-                            <p class="price_tag"><span class="canc">₹999.00</span><br>₹599.00</p>
-                        </div>
-                        <p class="bp_cap">Ankara dresses<br> <span class="shop">Shop now <i
-                                    class="fa-solid fa-arrow-right"></i></span></p>
-                    </div>
-                    <div class="box">
-                        <div id="one_bp2" class="one_bp">
-                            <p class="price_tag"><span class="canc">₹999.00</span><br>₹599.00</p>
-                        </div>
-                        <p class="bp_cap">Leather dresses<br><span class="shop">Shop now <i
-                                    class="fa-solid fa-arrow-right"></i></span></p>
-                    </div>
-                </div>
+        try:
+            user = User.objects.create_user(username=username, password=password, email=email)
+            user.save()
+            messages.success(request, 'Registration successful. Please log in.')
+            print("User created")
+            return redirect('login')
+        except IntegrityError:
+            messages.error(request, 'An error occurred during registration. Please try again.')
+        except Exception as e:
+            messages.error(request, f'Unexpected error: {e}')
+            print("User not created")
+    return render(request, 'review/register.html')
 
-            </div>
 
-            <!--END OF SECOND GIRD SECTION-->
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
 
-            <!--START OF THE NEW ARRIVALS SECTION-->
-            <div id="display_pro">
-                <h2 class="new_arr">New Arrivals</h2>
-                <div id="flex">
-                    <div id="first_pro" class="one">
-                        <div class="img" id="img1"><span class="sale_tag">Sale!</span><span class="like_btn"><i
-                                    class="fa-regular fa-heart"></i></span></div>
-                        <p class="caption_">Green gown <br> <span class="cancelled">₹1150.00</span> <span
-                                class="new">₹3600.00</span></p>
-                    </div>
+        if user is not None:
+            login(request, user)
+            messages.success(request, 'Login successful.')
+            print("User login")
+            return redirect('github_connect')
+        else:
+            messages.error(request, 'Invalid username or password. Please try again.')
+            print("User not login")
 
-                    <div id="first_pro" class="one">
-                        <div class="img" id="img2"><span class="sale_tag">Sale!</span><span class="like_btn"><i
-                                    class="fa-regular fa-heart"></i></span></div>
-                        <p class="caption_">Elegant Top <br> <span class="cancelled">₹3065.00</span> <span
-                                class="new">₹4600.00</span></p>
-                    </div>
+    return render(request, 'review/login.html')
 
-                    <div id="first_pro" class="one">
-                        <div class="img" id="img3"><span class="sale_tag">Sale!</span><span class="like_btn"><i
-                                    class="fa-regular fa-heart"></i></span></div>
-                        <p class="caption_">Get sporty <br> <span class="cancelled">₹5445.00</span> <span
-                                class="new">₹3605.00</span></p>
-                    </div>
 
-                    <div id="first_pro" class="one">
-                        <div class="img" id="img4"><span class="sale_tag">Sale!</span><span class="like_btn"><i
-                                    class="fa-regular fa-heart"></i></span></div>
-                        <p class="caption_">Chic but silk <br> <span class="cancelled">₹3370.00</span> <span
-                                class="new">₹5605.00</span></p>
-                    </div>
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Logged out successfully.')
+    return redirect('index')
 
-                    <div id="first_pro" class="one">
-                        <div class="img" id="img5"><span class="sale_tag">Sale!</span><span class="like_btn"><i
-                                    class="fa-regular fa-heart"></i></span></div>
-                        <p class="caption_">Show up classy <br> <span class="cancelled">₹8754.00</span> <span
-                                class="new">₹4603.00</span></p>
-                    </div>
-                </div>
 
-                <div id="sec_main">
-                    <div class="first_box">
-                        <img src="https://images.unsplash.com/photo-1632149877166-f75d49000351?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHx2aXN1YWwtc2VhcmNofDF8fHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-                            class="pro10" alt="a white outfit">
-                    </div>
-                    <div class="sec_box">
-                        <span class="gray">PERFECT SUMMER</span>
-                        <p class="head">Summer Days Look</p>
-                        <div id="white" class="one">
-                            <div class="img" id="img6"><span class="sale_tag2">Sale!</span><span class="like_btn"><i
-                                        class="fa-regular fa-heart"></i></span></div>
-                            <p class="caption">Textile dress<br> <span class="cancelled">$54.00</span> <span
-                                    class="new">$43.00</span></p>
-                        </div>
+def index(request):
+    return render(request, 'review/home.html')
 
-                    </div>
-                </div>
 
-            </div>
-            <!--END OF THE NEW ARRIVALS SECTION-->
+# ============================
+# 2. GitHub OAuth Views
+# ============================
 
-            <!--START OF BLOG POST SECTION-->
-            <section id="blog">
-                <div id="blog_posts">
-                    <div class="blog_head">
-                        <span class="gray">Our Blog</span>
-                        <p class="head">Latest in Blog</p>
-                    </div>
+@login_required
+def github_connect(request):
+    return render(request, 'review/connect.html')
 
-                    <div class="blog_post_box">
-                        <div class="blog">
-                            <img src="https://images.unsplash.com/photo-1520006403909-838d6b92c22e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHx2aXN1YWwtc2VhcmNofDF8fHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-                                class="blogpost1 blogimg" alt="clothes on hangers">
-                            <p class="blogp_decrip">
-                                <span class="date">Fashion / Sept 20, 2022</span>
-                                <br>
-                                What to wear this chrismas to have a lovely holiday with loved ones.
-                            </p>
-                        </div>
-                        <div class="blog">
-                            <img src="https://images.unsplash.com/photo-1627384113710-424c9181ebbb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHx2aXN1YWwtc2VhcmNofDF8fHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-                                class="blogpost2 blogimg" alt="Orgaics for skincare">
-                            <p class="blogp_decrip">
-                                <span class="date">Orgaics and skincare / Oct 3, 2022</span>
-                                <br>
-                                Best products to use for flawless and smooter skin.
-                            </p>
-                        </div>
-                        <div class="blog">
-                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHx2aXN1YWwtc2VhcmNofDF8fHxlbnwwfHx8fA%3D%3D&auto=format&fit=crop&w=500&q=60"
-                                class="blogpost3 blogimg" alt="shoe">
-                            <p class="blogp_decrip">
-                                <span class="date">Nike and shoes / Nov 10, 2022</span>
-                                <br>
-                                Nike to release 'The Jock's Special' next year.
-                            </p>
-                        </div>
-                    </div>
-                    <p class="centre">Discover more</p>
 
-                </div>
-            </section>
-            <!--END OF BLOG POST SECTION-->
-            <!--START OF STORE FEATURES-->
-            <section id="features">
-                <div id="feat">
-                    <div class="overall">
-                        <div class="icon"><i class="fa-solid fa-truck"></i></div>
-                        <div class="info">
-                            <span class="uppercase">FREE SHIPPING</span><br>
-                            <span class="light">From all orders over $100</span>
-                        </div>
-                    </div>
+def github_redirect(request):
+    client_id = settings.GITHUB_CLIENT_ID
+    redirect_uri = 'http://localhost:8000/oauth/callback/'
+    github_url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}"
+    return redirect(github_url)
 
-                    <div class="overall">
-                        <div class="icon"><i class="fa-solid fa-retweet"></i></div>
-                        <div class="info">
-                            <span class="uppercase">FREE RETURNS</span><br>
-                            <span class="light">Return money within 30 days</span>
-                        </div>
-                    </div>
 
-                    <div class="overall">
-                        <div class="icon"><i class="fa-solid fa-lock"></i></div>
-                        <div class="info">
-                            <span class="uppercase">SECURE SHOPPING</span><br>
-                            <span class="light">You're in safe hands</span>
-                        </div>
-                    </div>
+def github_callback(request):
+    code = request.GET.get('code')
+    client_id = settings.GITHUB_CLIENT_ID
+    client_secret = settings.GITHUB_CLIENT_SECRET
+    token_url = 'https://github.com/login/oauth/access_token'
 
-                    <div class="overall">
-                        <div class="icon"><i class="fa-solid fa-tag"></i></div>
-                        <div class="info">
-                            <span class="uppercase">OVER 10,000 STYLES</span><br>
-                            <span class="light">We have everything you need</span>
-                        </div>
-                    </div>
+    response = requests.post(token_url, headers={'Accept': 'application/json'}, data={
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'code': code
+    })
 
-                </div>
-            </section>
-            <!--END OF STORE FEATURES-->
+    token_data = response.json()
+    access_token = token_data.get('access_token')
 
-            <!--FOOTER SECTION AREA-->
-            <footer id="footer_box">
-                <section id="footer_content">
-                    <div class="f_foot">
+    GithubToken.objects.create(token=access_token)
 
-                        <h2 class="want">Want style Ideas and Treats?</h2>
-                        <div class="inputs">
-                            <input type="email" class="form_input" id="email" placeholder="Enter Email *" />
-                            <input type="submit" class="form_input" id="submit" value="Subscribe" />
-                        </div>
-                    </div>
-                    <div class="s_foot">
-                        <div class="img_links">
-                            <h2 class="f_logo">Shopper.</h2>
-                            <a href="" class="logo_link">
-                                <i class="fa-brands fa-facebook gray"></i>
+    return render(request, 'review/success.html', {'token': access_token})
 
-                            </a>
-                            <a href="" class="logo_link">
-                                <i class="fa-brands fa-youtube gray"></i>
-                            </a>
-                            <a href="" class="logo_link">
-                                <i class="fa-brands fa-twitter gray"></i>
-                            </a>
-                            <a href="" class="logo_link">
-                                <i class="fa-brands fa-instagram gray"></i>
-                            </a>
-                            <a href="" class="logo_link">
-                                <i class="fa-brands fa-medium gray"></i>
-                            </a>
-                        </div>
-                        <div class="space">
-                            <div class="other_links">
-                                <span class="bold">SUPPORT</span><br>
-                                <a href="" class="block_links">Contact us</a>
-                                <a href="" class="block_links">FAQs</a>
-                                <a href="" class="block_links">Size Guide</a>
-                                <a href="" class="block_links">Shipping & Returns</a>
-                            </div>
 
-                            <div class="other_links">
-                                <span class="bold">SHOP</span><br>
-                                <a href="" class="block_links">Men's Shopping</a>
-                                <a href="" class="block_links">Women's Shopping</a>
-                                <a href="" class="block_links">Kid's Shopping</a>
-                                <a href="" class="block_links">Discounts</a>
-                            </div>
+# ============================
+# 3. GitHub Webhook & PR Review (Using Gemini)
+# ============================
 
-                            <div class="other_links">
-                                <span class="bold">COMPANY</span><br>
-                                <a href="" class="block_links">Our Story</a>
-                                <a href="" class="block_links">Careers</a>
-                                <a href="" class="block_links">Terms & Conditions</a>
-                                <a href="" class="block_links">Privacy & Cookie Policy</a>
-                            </div>
-                            <div class="other_links">
-                                <span class="bold">CONTACT</span><br>
-                                <a href="" class="block_links">1-202-555-0105</a> </a>
-                                <a href="" class="block_links">1-202-555-0106</a>
-                                <a href="" class="block_links">help@shopper.com</a>
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                    <div id="extras">
-                        <p class="copy">&copy; 2022 All rights reserved. Designed by Amogh</p>
-                        <div class="pay">
-                            <img src="https://yevgenysim-turkey.github.io/shopper/assets/img/payment/mastercard.svg"
-                                class="payments" />
-                            <img src="https://yevgenysim-turkey.github.io/shopper/assets/img/payment/visa.svg"
-                                class="payments" />
-                            <img src="https://yevgenysim-turkey.github.io/shopper/assets/img/payment/amex.svg"
-                                class="payments" />
-                            <img src="https://yevgenysim-turkey.github.io/shopper/assets/img/payment/paypal.svg"
-                                class="payments" />
-                            <img src="https://yevgenysim-turkey.github.io/shopper/assets/img/payment/maestro.svg"
-                                class="payments" />
-                        </div>
-                    </div>
-                </section>
-            </footer>
+@csrf_exempt
+def github_webhook(request):
+    if request.method == 'POST':
+        event = request.META.get('HTTP_X_GITHUB_EVENT')
+        payload = request.body.decode('utf-8')
 
-            <!--END OF FOOTER SECTION AREA-->
-        </div>
-    </div>
+        # For pull request events, use the updated processing logic.
+        if event == 'pull_request':
+            process_pull_request(payload)
 
-</body>
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failure'}, status=400)
 
-</html>
+
+# Updated Process Pull Request Function:
+# Instead of extracting only changed diff data, we now fetch the entire repository content.
+def process_pull_request(payload):
+    payload = json.loads(payload)
+    pr_data = payload.get('pull_request', {})
+    repo_full_name = payload.get('repository', {}).get('full_name')
+    
+    # Call the full repository review function
+    review = review_entire_repository(repo_full_name)
+    post_review_comment(pr_data, review)
+
+
+# (Old diff-based functions are retained below in case you need them for other purposes)
+def fetch_diff_from_github(diff_url):
+    token = GithubToken.objects.first().token
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3.diff"
+    }
+    response = requests.get(diff_url, headers=headers)
+    if response.status_code == 200:
+        return response.text
+    else:
+        print(f"Error fetching diff from GitHub: {response.status_code}")
+        return "Error: Unable to fetch diff."
+
+
+def call_huggingface_for_review(pr_title: str, pr_body: str, pr_diff: str) -> str:
+    genai.configure(api_key=settings.GOOGLE_API_KEY)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+
+    if not pr_body or pr_body.lower() == 'none':
+        pr_body = "The pull request does not contain a description. Please review based on the title."
+
+    prompt = f"""
+    You are an AI code reviewer. Please analyze the following pull request:
+
+    Title: {pr_title}
+    Description: {pr_body}
+
+    Code Changes (Diff):
+    {pr_diff}
+
+    Provide suggestions for improvements, highlight potential issues, and offer feedback.
+    """
+
+    print("Prompt being sent to Gemini API:")
+    print(json.dumps({'prompt': prompt}, indent=4))
+
+    try:
+        response = model.generate_content(prompt)
+        review_text = response.text.strip()
+        review_text = clean_review_output(review_text)
+        return review_text if review_text else "No review provided."
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return f"Error: {str(e)}"
+
+
+def clean_review_output(response_text):
+    filtered_text = response_text.split("See also:")[0]
+    return filtered_text.strip()
+
+
+def post_review_comment(pr_data, review):
+    pr_number = pr_data.get('number')
+    repo_full_name = pr_data.get('base', {}).get('repo', {}).get('full_name')
+    token = GithubToken.objects.first().token
+    api_url = f"https://api.github.com/repos/{repo_full_name}/issues/{pr_number}/comments"
+
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    data = {
+        "body": review
+    }
+
+    response = requests.post(api_url, headers=headers, json=data)
+    return response.status_code
+
+
+# ============================
+# 4. Other Views
+# ============================
+
+def home(request):
+    return render(request, 'index.html')
+
+
+def tutorial(request):
+    return render(request, 'review/tutorial.html')
+
+
+@login_required
+def code_review(request):
+    return render(request, 'review/code_review.html')
+
+
+@csrf_exempt
+def analyze_code(request):
+    if request.method == 'POST':
+        code_text = request.POST.get('code_text')
+        code_file = request.FILES.get('code_file')
+
+        if code_file:
+            code_text = code_file.read().decode('utf-8')
+
+        escaped_code_text = code_text.replace('\n', '\n').replace('\r', '\r')
+
+        prompt = f"Analyze the following code for accuracy (score), optimization (score), and suggestions (text):\n\n{escaped_code_text}"
+        ai_request = {
+            "model": "gemini-1.5-flash",
+            "prompt": prompt
+        }
+
+        try:
+            model = genai.GenerativeModel(ai_request['model'])
+            response = model.generate_content(ai_request['prompt'])
+            analysis_text = response.candidates[0].content.parts[0].text if response.candidates else "No analysis available"
+            return JsonResponse({"analysis": analysis_text})
+        except Exception as e:
+            print(f"Error in AI processing: {e}")
+            return JsonResponse({"error": "An error occurred while processing the code."}, status=500)
+    else:
+        return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+# ============================
+# 5. Full Repository Review Functionality (Entire Repo Data)
+# ============================
+
+def fetch_full_repo_content(repo_full_name, default_branch='main'):
+    token = GithubToken.objects.first().token
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    branch_url = f"https://api.github.com/repos/{repo_full_name}/branches/{default_branch}"
+    branch_response = requests.get(branch_url, headers=headers)
+    if branch_response.status_code != 200:
+        print(f"Error fetching branch info: {branch_response.status_code}")
+        return {}
+
+    tree_sha = branch_response.json()['commit']['commit']['tree']['sha']
+    tree_url = f"https://api.github.com/repos/{repo_full_name}/git/trees/{tree_sha}?recursive=1"
+    tree_response = requests.get(tree_url, headers=headers)
+    if tree_response.status_code != 200:
+        print(f"Error fetching tree: {tree_response.status_code}")
+        return {}
+
+    tree = tree_response.json().get('tree', [])
+    files_content = {}
+
+    for item in tree:
+        if item['type'] == 'blob':
+            file_path = item['path']
+            # Skip binary or irrelevant files
+            if any(file_path.endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.ico']):
+                continue
+            if any(folder in file_path for folder in ['node_modules', 'venv', '.git']):
+                continue
+
+            raw_url = f"https://raw.githubusercontent.com/{repo_full_name}/{default_branch}/{file_path}"
+            file_response = requests.get(raw_url, headers=headers)
+            if file_response.status_code == 200:
+                files_content[file_path] = file_response.text
+            else:
+                files_content[file_path] = f"Error fetching content (status {file_response.status_code})"
+
+    return files_content
+
+
+def review_entire_repository(repo_full_name):
+    repo_data = fetch_full_repo_content(repo_full_name)
+    
+    # Print the full repository content for monitoring purposes
+    print("===== Full Repository Content =====")
+    print(json.dumps(repo_data, indent=2))
+    print("===================================")
+    
+    if not repo_data:
+        return "Error: Could not retrieve repository content."
+
+    prompt = f"""
+You are an expert AI code reviewer.
+
+Below is the full source code of a GitHub repository, formatted as a dictionary where keys are file paths and values are file contents.
+
+Your tasks:
+1. Provide a detailed code quality review.
+2. Identify improvements, bugs, or security issues.
+3. Suggest best practices for performance, scalability, and readability.
+4. Give an overall evaluation of the codebase.
+
+Repository content:
+{json.dumps(repo_data, indent=2)}
+"""
+
+    try:
+        genai.configure(api_key=settings.GOOGLE_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Gemini API error: {e}")
+        return f"Gemini API error: {e}"
+
+
+@csrf_exempt
+def full_repo_review(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            repo_full_name = data.get('repository', {}).get('full_name')
+            if not repo_full_name:
+                return JsonResponse({'error': 'Repository full name missing.'}, status=400)
+
+            review = review_entire_repository(repo_full_name)
+            return JsonResponse({'review': review}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    else:
+        return JsonResponse({'error': 'Invalid request method.'}, status=405)
